@@ -78,6 +78,8 @@ function _setListeners() {
   this.hamburgerSurface.on('click', function() {
     this._eventOutput.emit('menuToggle')
   }.bind(this))
+
+  this.bodySurface.pipe(this._eventOutput)
 }
 
 function PageView() {

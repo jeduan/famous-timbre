@@ -1,5 +1,4 @@
 var View = require('famous/core/View');
-// var Surface = require('famous/core/Surface');
 var Transform = require('famous/core/Transform');
 var StateModifier = require('famous/modifiers/StateModifier');
 var Easing = require('famous/transitions/Easing')
@@ -7,10 +6,13 @@ var GenericSync = require('famous/inputs/GenericSync')
 var TouchSync = require('famous/inputs/TouchSync')
 var Transitionable = require('famous/transitions/Transitionable')
 var Modifier = require('famous/core/Modifier')
+var inherits = require('inherits')
 
 var PageView = require('./PageView')
 var MenuView = require('./MenuView')
 var stripData = require('../data/StripData')
+var ViewStore = require('../stores/ViewStore')
+var ViewActions = require('../actions/ViewActions')
 
 GenericSync.register({
   touch: TouchSync
@@ -23,7 +25,6 @@ function _createPageView() {
       return Transform.translate(this.pageViewPos.get(), 0, 0)
     }.bind(this)
   })
-  this.pageView.on('menuToggle', this.toggleMenu.bind(this))
 
   this.add(this.pageModifier).add(this.pageView)
 }
@@ -45,6 +46,9 @@ function _handleSwipe() {
 
   sync.on('update', function(data) {
     var currentPosition = this.pageViewPos.get()
+    if (currentPosition === 0 && data.velocity > 0) {
+      ViewActions.animateStrips()
+    }
     this.pageViewPos.set(Math.max(0, currentPosition + data.delta))
   }.bind(this))
 
@@ -71,33 +75,23 @@ function _handleSwipe() {
 function AppView() {
   View.apply(this, arguments);
 
-  this.menuToggle = false
   this.pageViewPos = new Transitionable(0)
 
   _createPageView.call(this)
   _createMenuView.call(this)
   _handleSwipe.call(this)
+  ViewStore.addListener(function() {
+    if (ViewStore.isMenuOpen()) {
+      this.slideRight()
+    } else {
+      this.slideLeft()
+    }
+  }.bind(this))
 }
-
-AppView.prototype = Object.create(View.prototype);
-AppView.prototype.constructor = AppView;
-
-AppView.prototype.toggleMenu = function() {
-  if (this.menuToggle) {
-    this.slideLeft()
-  } else {
-    this.slideRight()
-  }
-  this.menuToggle = !this.menuToggle
-}
+inherits(AppView, View)
 
 AppView.prototype.slideLeft = function() {
-  this.pageViewPos.set(0,
-    this.options.transition,
-    function() {
-      this.menuToggle = false
-    }.bind(this)
-  )
+  this.pageViewPos.set(0, this.options.transition)
 }
 
 AppView.prototype.slideRight = function() {

@@ -4,7 +4,9 @@ var Transform = require('famous/core/Transform');
 var StateModifier = require('famous/modifiers/StateModifier');
 var HeaderFooter = require('famous/views/HeaderFooterLayout')
 var ImageSurface = require('famous/surfaces/ImageSurface')
-var FastClick = require('famous/inputs/FastClick')
+require('famous/inputs/FastClick')
+
+var ViewActions = require('../actions/ViewActions')
 
 function _createLayout() {
   this.layout = new HeaderFooter({
@@ -76,15 +78,26 @@ function _createBody() {
 
 function _setListeners() {
   this.hamburgerSurface.on('click', function() {
-    this._eventOutput.emit('menuToggle')
-  }.bind(this))
+    ViewActions.toggleMenu({animateStripsIfOpened: true})
+  })
 
   this.bodySurface.pipe(this._eventOutput)
+}
+
+function _createBacking() {
+  var backing = new Surface({
+    properties: {
+      backgroundColor: 'black',
+      boxShadow: '0 0 20px rgba(0,0,0,0.5)'
+    }
+  })
+  this.add(backing)
 }
 
 function PageView() {
   View.apply(this, arguments);
 
+  _createBacking.call(this)
   _createLayout.call(this)
   _createHeader.call(this)
   _createBody.call(this)
